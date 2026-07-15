@@ -4,7 +4,7 @@
 
 | Skill | Description |
 |-------|-------------|
-| _Add your skill below_ | _Brief one-line description_ |
+| [ford](SKILLS/ford/SKILL.md) | Use this skill for adding FORD documentation comments to Fortran source code. |
 
 ## Adding a Skill
 
