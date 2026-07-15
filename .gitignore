@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+.packages/
+
+# Build artifacts
+build/
+dist/
+cmake-build-*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated docs
+docs/
+*.pdf
