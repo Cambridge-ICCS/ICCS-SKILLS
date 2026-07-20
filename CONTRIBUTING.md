@@ -81,6 +81,7 @@ git push -u origin your-branch-name
 - Keep explanations concise and focused on actions the AI can take
 - Use tables to present structured information (config options, parameters, commands)
 - Provide copy-pasteable examples
+- Aim for **~500 lines or fewer** per skill — split large content into separate files in the skill directory and reference them from `SKILL.md`
 
 ### Commit Messages
 
