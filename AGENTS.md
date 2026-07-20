@@ -6,14 +6,13 @@ This repository contains AI coding assistant skills for the Cambridge Institute 
 
 ```
 ├── LICENSE                       MIT licence (ICCS 2026)
-├── README.md                     Landing page with usage and authoring guides
-├── SKILLS.md                     Index of all skills
+├── README.md                     Landing page, usage guide, and skills index
 ├── SKILL-AUTHORING.md            Guide to writing skills
 ├── AGENTS.md                     This file — agent instructions
 ├── CONTRIBUTING.md               How to contribute (PRs, conventions)
 ├── .github/
 │   └── PULL_REQUEST_TEMPLATE.md  PR template for contributions
-└── SKILLS/
+└── skills/
     └── <skill-name>/
         └── SKILL.md              The skill file (required)
         └── ...                   Additional files (optional, e.g. examples, assets)
@@ -41,16 +40,16 @@ Each skill is primarily defined in `SKILL.md` within its directory. Files must f
 
 ```bash
 # 1. Create the directory and SKILL.md
-mkdir -p SKILLS/<skill-name>
+mkdir -p skills/<skill-name>
 
-# 2. Write content to SKILLS/<skill-name>/SKILL.md
+# 2. Write content to skills/<skill-name>/SKILL.md
 # Start with the frontmatter, then add your content sections.
 
-# 3. Add an index entry to SKILLS.md
+# 3. Add an index entry to README.md
 # Update the table: | <skill-name> | <one-line description> |
 
 # 4. Commit
-git add SKILLS/<skill-name>/ SKILLS.md
+git add skills/<skill-name>/ README.md
 git commit -m "docs(SKILLS): add <skill-name> skill"
 ```
 
@@ -59,7 +58,7 @@ git commit -m "docs(SKILLS): add <skill-name> skill"
 ```bash
 # 1. Edit the SKILL.md file directly
 # 2. Commit the change
-git add SKILLS/<existing-skill>/SKILL.md
+git add skills/<existing-skill>/SKILL.md
 git commit -m "docs(SKILLS): update <skill-name> skill"
 ```
 
@@ -67,28 +66,28 @@ git commit -m "docs(SKILLS): update <skill-name> skill"
 
 ```bash
 # 1. Remove the directory and its index entry
-rm -rf SKILLS/<skill-name>
+rm -rf skills/<skill-name>
 
-# 2. Remove the table row from SKILLS.md
+# 2. Remove the table row from README.md
 
 # 3. Commit
-git add SKILLS/ SKILLS.md
+git add skills/ README.md
 git commit -m "docs(SKILLS): remove <skill-name> skill"
 ```
 
-### Updating the Index (SKILLS.md)
+### Updating the Index (README.md)
 
 To regenerate the index from the filesystem:
 
 ```bash
-# Scan SKILLS/ directory and rebuild the table in SKILLS.md
+# Scan skills/ directory and rebuild the table in README.md
 # Each directory becomes a row: | name | description (from frontmatter) |
 ```
 
 ## Conventions
 
 - Follow [conventional commits](https://www.conventionalcommits.org/) with a `docs(SKILLS):` prefix for all changes in this repo
-- Keep skill directories flat (no nested `SKILLS/something/nested/`)
+- Keep skill directories flat (no nested `skills/something/nested/`)
 - Name directories with lowercase hyphen-separated identifiers
 - Do not commit large files (>5 MB) — use assets or external links instead
 - If a skill references code from another repo, include a full URL in the skill content
