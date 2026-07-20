@@ -90,4 +90,5 @@ To regenerate the index from the filesystem:
 - Keep skill directories flat (no nested `skills/something/nested/`)
 - Name directories with lowercase hyphen-separated identifiers
 - Do not commit large files (>5 MB) — use assets or external links instead
+- Aim to keep `SKILL.md` to ~500 lines or fewer — move supplementary material into separate files in the skill directory
 - If a skill references code from another repo, include a full URL in the skill content

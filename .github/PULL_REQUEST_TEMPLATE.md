@@ -10,5 +10,6 @@
 - [ ] I have read and followed the [Contributing Guide](CONTRIBUTING.md)
 - [ ] Frontmatter is present with correct `name` and `description`
 - [ ] The skill content is well-structured and actionable
+- [ ] `SKILL.md` is ~500 lines or fewer (supplementary material moved to separate files if needed)
 - [ ] The index table in [README.md](README.md) has been updated (for new skills)
 - [ ] Commit messages follow the [conventional commits](https://www.conventionalcommits.org/) convention
