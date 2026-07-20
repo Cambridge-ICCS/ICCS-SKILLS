@@ -58,6 +58,7 @@ Organize your content so an AI assistant can perform tasks confidently. A comple
 - If the skill modifies code, make it clear **what files** are affected and **where**
 - If the skill runs commands, make the commands explicit and copy-pasteable
 - Prefer self-contained guidance — don't require the user to know about the skill author's other tools
+- Aim for **~500 lines or fewer** per `SKILL.md`. If a skill exceeds that, move supplementary material (examples, reference docs, etc.) into separate files in the skill directory and reference them from `SKILL.md`
 
 ## Extra Files
 
