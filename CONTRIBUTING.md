@@ -8,7 +8,7 @@ Thank you for contributing to this shared skills repository. This document cover
 
 1. **Create the directory:**
    ```bash
-   mkdir SKILLS/<skill-name>
+   mkdir skills/<skill-name>
    ```
 
 2. **Create `SKILL.md`** — the core skill file with required frontmatter:
@@ -20,14 +20,14 @@ Thank you for contributing to this shared skills repository. This document cover
    ```
    Then add your skill content below the frontmatter. See [SKILL-AUTHORING.md](SKILL-AUTHORING.md) for a full guide to writing skills.
 
-3. **Add an index entry** to [SKILLS.md](SKILLS.md):
+3. **Add an index entry** to the index table in [README.md](README.md):
    ```markdown
    | your-skill-name | One-line description. |
    ```
 
 4. **Commit and PR:**
    ```bash
-   git add SKILLS/<skill-name>/SKILL.md SKILLS.md
+   git add skills/<skill-name>/SKILL.md README.md
    git commit -m "docs(SKILLS): add your-skill-name skill"
    git push -u origin your-branch-name
    ```
@@ -37,8 +37,8 @@ Thank you for contributing to this shared skills repository. This document cover
 Edit the `SKILL.md` file directly and submit a PR:
 
 ```bash
-git edit SKILLS/<skill-name>/SKILL.md
-git add SKILLS/<skill-name>/SKILL.md
+git edit skills/<skill-name>/SKILL.md
+git add skills/<skill-name>/SKILL.md
 git commit -m "docs(SKILLS): update <skill-name> skill"
 git push -u origin your-branch-name
 ```
@@ -46,9 +46,9 @@ git push -u origin your-branch-name
 ### Removing a Skill
 
 ```bash
-rm -rf SKILLS/<skill-name>
-# Also remove the corresponding table row from SKILLS.md
-git add SKILLS/ SKILLS.md
+rm -rf skills/<skill-name>
+# Also remove the corresponding table row from README.md
+git add skills/ README.md
 git commit -m "docs(SKILLS): remove <skill-name> skill"
 git push -u origin your-branch-name
 ```
@@ -107,7 +107,7 @@ At minimum, ensure:
 - [ ] Frontmatter is correct and matches the directory name
 - [ ] The `description` is clear and accurate
 - [ ] Content is well-structured and follows the guidelines above
-- [ ] [SKILLS.md](SKILLS.md) has been updated (for new skills)
+- [ ] The index table in [README.md](README.md) has been updated (for new skills)
 - [ ] Commit messages follow the conventional commits convention
 
 ### Review Process
