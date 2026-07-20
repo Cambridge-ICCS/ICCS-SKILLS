@@ -77,7 +77,7 @@ f = -a             ! Negation
 c = d              ! Assignment
 ```
 
-### Interrogation
+### `tensor` methods
 
 - `tensor%get_shape()` - Returns shape as integer array.
 - `tensor%get_stride()` - Returns stride as integer array.
@@ -86,25 +86,20 @@ c = d              ! Assignment
 - `tensor%get_device_type()` - Returns device enum.
 - `tensor%get_device_index()` - Returns device index.
 - `tensor%requires_grad()` - Returns logical gradient flag.
-- `torch_tensor_print(tensor)` or `tensor%print()` - Print tensor contents.
-
-### Manipulation
-
+- `tensor%print()` - Print tensor contents.
 - `tensor%zero()` - Zero out tensor data.
 - `tensor%zero_grad()` - Zero gradients.
+
+### `tensor` utility functions
+
+- `torch_tensor_print(tensor)` - Print tensor contents.
 - `torch_tensor_to(tensor, device_type, device_index)` - Move to device.
 - `torch_tensor_sum(result, tensor)` - Sum all elements.
 - `torch_tensor_mean(result, tensor)` - Mean of all elements.
-
-### Autograd
-
 - `torch_tensor_backward(tensor)` - Backward pass (computes gradients).
 - `torch_tensor_backward(tensor, retain_graph=.true.)` - Retain computation graph.
 - `torch_tensor_get_gradient(grad_tensor, source_tensor)` - Extract gradient.
 - `torch_tensor_backward(tensor, external_gradient)` - Backward with external gradient tensor.
-
-### Destructor
-
 - `torch_tensor_delete(tensor)` - Optional; finalizer runs automatically.
 
 ## `torch_model`
