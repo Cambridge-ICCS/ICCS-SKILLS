@@ -11,6 +11,7 @@ Skills are plain-text instructions designed for AI coding assistants (OpenCode, 
 | Skill | Description |
 |-------|-------------|
 | [ford](skills/ford/SKILL.md) | Use this skill for adding FORD documentation comments to Fortran source code. |
+| [ftorch](SKILLS/ftorch/SKILL.md) | Use this skill when working with the FTorch library to couple PyTorch ML models to Fortran code. |
 
 ## How to Use
 
