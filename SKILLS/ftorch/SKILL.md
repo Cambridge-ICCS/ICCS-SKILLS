@@ -1,6 +1,6 @@
 ---
 name: ftorch
-description: Use this skill when working with the FTorch library - a Fortran library for coupling PyTorch ML models to Fortran code. Load when editing, creating, or debugging FTorch code, examples, or tests.
+description: Use this skill when working with the FTorch library - a Fortran library for coupling PyTorch machine learning models to Fortran code. Load when editing, creating, or debugging FTorch code, examples, or tests.
 ---
 
 # What I do
@@ -12,7 +12,7 @@ I help use the FTorch library for coupling PyTorch machine learning models to Fo
 Use this skill when:
 - Writing Fortran code that uses FTorch (`use ftorch`)
 - Creating or modifying FTorch examples or tests
-- Working with `torch_tensor`, `torch_model`, or `torch_optim` types
+- Working with `torch_tensor`, `torch_model`, `torch_optim`, or `torch_loss` types
 - Building FTorch projects with CMake
 - Debugging FTorch tensor operations or model inference
 
@@ -20,12 +20,13 @@ Use this skill when:
 
 - FTorch installed and available in your build system
 - LibTorch (PyTorch C++ API) installed
+- `ftorch_utils` Python utility installed using `pip`
 - CMake available for building FTorch projects
 - A `.pt` (TorchScript) model file for inference
 
 # Quick Start
 
-Basic FTorch inference pattern:
+Basic FTorch inference pattern on CPU:
 
 ```fortran
 use, intrinsic :: iso_fortran_env, only : sp => real32
@@ -54,7 +55,7 @@ call torch_delete(out_tensors)
 
 ## `torch_tensor`
 
-Represents a PyTorch tensor. Operations support `real32`, `real64`, and integer types. Tensors support up to 5 dimensions.
+Represents a PyTorch tensor. Operations support `real32`, `real64`, and integer types. Tensors support up to 5 dimensions, although this is easily extensible via the `fypp` Fortran Preprocessor syntax in `src/ftorch_tensor.fypp`.
 
 ### Constructors
 
@@ -132,7 +133,9 @@ call torch_model_save(model, "saved_model.pt")
 call model%print_parameters()
 
 ! Check training mode
-if (model%is_training()) then ...
+if (model%is_training()) then
+  ! ...
+end if
 
 ! Delete
 call torch_model_delete(model)  ! Optional; finalizer runs automatically
