@@ -32,7 +32,7 @@ Use this skill whenever a user mentions MESC, sometimes referred to as MES-C.
   * Model options:
     * `jglobal`: binary integer for whether global output is requested.
     * `kinetics`: integer in the range 1-3 that specifies kinetics approach
-      (1: forward MM, 2: reverse MM, 3: MES-C).
+      (1: forward MM, 2: reverse MM, 3: MES-C specific mixed forward/reverse MM).
     * `bgcopt`: integer biogeochemical type to simulate.
     * `jopt`: binary integer toggling between forward simulation vs SCE-UA
       optimisation.
