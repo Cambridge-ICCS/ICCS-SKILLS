@@ -60,7 +60,12 @@ navigate to the `test/` subdirectory and run `./run_main.sh`.
 
 # Core concepts
 
-* Code developed in the project should have a modular, clear structure.
+* MESC code should be developed such that it has a modular, clear structure, to
+  facilitate coupling to land surface models such as ORCHIDEE and CABLE.
+* The test suite should always be run when source or build system code is
+  altered.
+* The Fortitude linter should always be applied when adding or modifying Fortran
+  source code.
 
 ## See Also
 
