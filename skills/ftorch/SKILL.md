@@ -265,8 +265,8 @@ call torch_model_save(model, "trained_model.pt")
 FTorch uses CMake. Key variables:
 
 ```bash
-cmake .. -DCMAKE_BUILD_TYPE=Release &
-  -DCMAKE_PREFIX_PATH=</path/to/libtorch> &
+cmake .. -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_PREFIX_PATH=</path/to/libtorch> \
   -DCMAKE_INSTALL_PREFIX=</install/path>
 ```
 
