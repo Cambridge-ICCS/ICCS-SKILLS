@@ -73,11 +73,16 @@ should treat that primal argument as an output.
 
 ### `enzyme_dup`
 
-Binds to the `enzyme_out` integer in C. When passed in front of a primal-shadow
+Binds to the `enzyme_dup` integer in C. When passed in front of a primal-shadow
 argument pair pased to a function hook, this indicates that the differentiation
 should treat the shadow as a seed or derivative, depending on the specified
 `intent`.
 
+## Implicit-interface restrictions
+
+The function hooks use implicit interfaces. These interfaces support arguments passed by reference.
+
+For arguments with the `value` attribute, declare an explicit interface for the primal function to pass to the differentiation hook. Ensure the explicit interface passes arguments in the same way as the original procedure.
 # Build System
 
 ## Building Enzyme
