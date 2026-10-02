@@ -12,6 +12,7 @@ Skills are plain-text instructions designed for AI coding assistants (OpenCode, 
 |-------|-------------|
 | [enzyme-fortran](skills/enzyme-fortran/SKILL.md) | Use this skill when working with the Enzyme automatic differentiation framework to differentiate Fortran code. |
 | [ford](skills/ford/SKILL.md) | Use this skill for adding FORD documentation comments to Fortran source code. |
+| [fortitude](skills/fortitude/SKILL.md) | Use this skill when linting Fortran source code with the Fortitude linter, including running checks, fixing warnings, and configuring rule selection. |
 | [ftorch](skills/ftorch/SKILL.md) | Use this skill when working with the FTorch library to couple PyTorch ML models to Fortran code. |
 
 ## How to Use
