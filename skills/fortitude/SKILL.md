@@ -46,6 +46,9 @@ fortitude check src/ tests/test_utils.f90
 # Automatically fix fixable warnings
 fortitude check --fix
 
+# Include unsafe fixes (fixes that may change code meaning)
+fortitude check --fix --unsafe-fixes
+
 # Preview fixes without applying them
 fortitude check --diff
 
@@ -75,8 +78,9 @@ fortitude check --help
 | `--ignore=RULES` | Ignore rules or groups |
 | `--extend-select=RULES` | Select additional rules on top of config file |
 | `--preview` | Enable unstable preview rules |
-| `--file-extensions=f90,fpp` | Extensions to search for in directories (deprecated since 0.8.0 — use top-level `include` in config instead) |
+| `--file-extensions=f90,F` | Extensions to search for in directories (deprecated since 0.8.0 — use top-level `include` in config instead) |
 | `--extend-exclude=benchmarks,tests` | Additional paths to exclude |
+| `--statistics` | Show counts for every rule with at least one violation |
 | `--no-respect-gitignore` | Don't ignore files/dirs in `.gitignore` (default: respected) |
 | `--output-format=concise` | Shorter output (also `full`, `json`, SARIF, GitHub/GitLab CI formats) |
 | `--summary` | Brief overview (with `explain`) |
@@ -221,6 +225,8 @@ fortitude check --fix
 ```
 
 Run `fortitude explain` to see which rules have fixes available. Prefer `--fix` over manual edits for mechanical fixes; review the diff afterwards.
+
+Fixes are labelled **safe** or **unsafe**: safe fixes do not change code meaning, unsafe fixes may. Only safe fixes are applied by default; add `--unsafe-fixes` to include unsafe ones (Fortitude hints when unsafe fixes are available but not enabled).
 
 # Editor Integration and pre-commit
 
