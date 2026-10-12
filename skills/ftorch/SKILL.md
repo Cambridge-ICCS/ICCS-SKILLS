@@ -60,7 +60,8 @@ Represents a PyTorch tensor. Operations support `real32`, `real64`, and integer 
 ### Constructors
 
 - `torch_tensor_from_array(tensor, array, device)` - Create from a Fortran array (zero-copy, no data copy). Most common pattern.
-- `torch_tensor_from_array(tensor, array, layout, device)` - From array with explicit dimension layout ordering.
+- `torch_tensor_from_array(tensor, array, device, permute_dims=[n, ..., 1])` - From array with dimensions permuted (optional keyword; semantics match `torch.permute()`).
+- `torch_tensor_from_array_legacy(tensor, array, layout, device)` - Deprecated v1 signature with required positional `layout`. Will be removed in a future version.
 - `torch_tensor_empty(tensor, ndims, shape, dtype, device)` - Uninitialized tensor with given shape.
 - `torch_tensor_zeros(tensor, ndims, shape, dtype, device)` - Tensor filled with zeros.
 - `torch_tensor_ones(tensor, ndims, shape, dtype, device)` - Tensor filled with ones.
@@ -80,21 +81,24 @@ c = d              ! Assignment
 
 ### `tensor` methods
 
-- `tensor%get_shape()` - Returns shape as integer array.
-- `tensor%get_stride()` - Returns stride as integer array.
-- `tensor%get_rank()` - Returns number of dimensions.
-- `tensor%get_dtype()` - Returns data type enum.
-- `tensor%get_device_type()` - Returns device enum.
-- `tensor%get_device_index()` - Returns device index.
+- `tensor%shape()` - Returns shape as a freshly allocated `int64` array.
+- `tensor%stride()` - Returns stride as a freshly allocated `int64` array.
+- `tensor%rank()` - Returns number of dimensions.
+- `tensor%dtype()` - Returns data type enum.
+- `tensor%device_type()` - Returns device enum.
+- `tensor%device_index()` - Returns device index.
 - `tensor%requires_grad()` - Returns logical gradient flag.
 - `tensor%print()` - Print tensor contents.
 - `tensor%zero()` - Zero out tensor data.
 - `tensor%zero_grad()` - Zero gradients.
 
+Standalone equivalents exist: `tensor%shape()` ≡ `torch_tensor_get_shape(tensor)`,
+`tensor%rank()` ≡ `torch_tensor_get_rank(tensor)`, etc.
+
 ### `tensor` utility functions
 
 - `torch_tensor_print(tensor)` - Print tensor contents.
-- `torch_tensor_to(tensor, device_type, device_index)` - Move to device.
+- `torch_tensor_to(source, target, [non_blocking])` - Copy `source` into existing `target` (matching shape), adopting `target`'s device/dtype.
 - `torch_tensor_sum(result, tensor)` - Sum all elements.
 - `torch_tensor_mean(result, tensor)` - Mean of all elements.
 - `torch_tensor_backward(tensor)` - Backward pass (computes gradients).
@@ -148,12 +152,18 @@ Optimizer types for training. Supports SGD, Adam, and AdamW.
 ```fortran
 type(torch_optim) :: optimizer
 
-! Create optimizers (all parameters optional with defaults)
-call torch_optim_SGD(optimizer, params, learning_rate=0.01)
-call torch_optim_SGD(optimizer, params, learning_rate=0.01, momentum=0.9, weight_decay=1.0e-4_r8)
+! Create optimizers (all hyperparameters optional with defaults matching Torch)
+call torch_optim_SGD(optimizer, params, learning_rate=0.01_r8)
+call torch_optim_SGD(optimizer, params, learning_rate=0.01_r8, momentum=0.9_r8, &
+                     weight_decay=1.0e-4_r8, dampening=0.0_r8, nesterov=.false.)
 
-call torch_optim_Adam(optimizer, params, learning_rate=0.001)
-call torch_optim_AdamW(optimizer, params, learning_rate=0.001)
+call torch_optim_Adam(optimizer, params, learning_rate=0.001_r8)
+call torch_optim_AdamW(optimizer, params, learning_rate=0.001_r8)
+
+! Adam/AdamW keywords (weight_decay default differs: 0.0 vs 0.01):
+call torch_optim_Adam(optimizer, params, learning_rate=0.001_r8, beta_1=0.9_r8, &
+                      beta_2=0.999_r8, eps=1.0e-8_r8, weight_decay=0.0_r8, &
+                      amsgrad=.false.)
 
 ! Training step
 call optimizer%zero_grad()
@@ -182,33 +192,43 @@ call torch_optim_delete(optimizer)  ! Optional; finalizer runs automatically
 # Loss Functions
 
 ```fortran
-use ftorch, only: torch_loss_mse, torch_loss_cross_entropy
+use ftorch, only: torch_loss_mse, torch_loss_cross_entropy, torch_kMean
 
 call torch_loss_mse(loss, input, target)
 call torch_loss_cross_entropy(loss, input, target)
 ```
+
+Loss functions take an optional positional `reduction_type`:
+
+```fortran
+call torch_loss_mse(loss, input, target, torch_kSum)
+```
+
+- `torch_kNone` - No reduction; loss keeps input dimensions.
+- `torch_kMean` (default) - Mean over the batch.
+- `torch_kSum` - Sum over the batch.
 
 # Test Utilities
 
 The `ftorch_test_utils` module provides testing helpers:
 
 ```fortran
-use ftorch_test_utils, only: allclose, assert_allclose
+use ftorch_test_utils, only: allclose, isclose
 
 ! Returns logical
 passed = allclose(array1, array2, rtol=1e-5, atol=1e-8, test_name="my_test")
-
-! Stops with error on failure
-call assert_allclose(array1, array2, test_name="my_test")
 ```
+
+Note: these helpers are NOT re-exported by the `ftorch` module (they are private
+there since v2); import them explicitly from `ftorch_test_utils`. The legacy
+`assert_isclose`/`assert_allclose` aliases were removed in v2.
 
 # Training Pattern
 
 Full training loop from `examples/11_Training/training.f90`:
 
 ```fortran
-use, intrinsic :: iso_fortran_env, only : sp => real32, dp => real64
-use, intrinsic :: iso_c_binding, only: c_int64_t
+use, intrinsic :: iso_fortran_env, only : int64, sp => real32, dp => real64
 use ftorch, only: assignment(=), operator(-), operator(**), &
                   torch_kCPU, torch_kFloat32, &
                   torch_tensor, torch_tensor_from_array, torch_tensor_empty, &
@@ -220,7 +240,7 @@ use ftorch, only: assignment(=), operator(-), operator(**), &
 
 integer, parameter :: wp = sp
 real(dp), parameter :: lr = 0.01
-integer(c_int64_t), dimension(2), parameter :: shape = [5, 5]
+integer(int64), dimension(2), parameter :: shape = [5, 5]
 
 real(wp), dimension(5), target :: in_data, out_data, target_data
 real(wp), dimension(1), target :: loss_data
@@ -272,7 +292,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release \
 
 | CMake Option | Values | Description |
 |---|---|---|
-| `CMAKE_PREFIX_PATH` | path | Path to LibTorch installation |
+| `CMAKE_PREFIX_PATH` | path | Path to LibTorch installation (C++20-capable C++ compiler required; GCC >= 11) |
 | `CMAKE_BUILD_TYPE` | `Release`/`Debug` | Build configuration |
 | `BUILD_SHARED_LIBS` | `ON`/`OFF` | Shared vs static library |
 | `GPU_DEVICE` | `NONE`/`CUDA`/`HIP`/`XPU`/`MPS` | GPU backend |
@@ -286,10 +306,9 @@ cmake .. -DCMAKE_BUILD_TYPE=Release \
 
 - `torch_tensor_from_array(tensor, array, device)` - Tensor wraps the Fortran array directly (column-major strides). Zero-copy.
 - `torch_tensor_empty/zeros/ones` - Tensor allocated by PyTorch (row-major strides).
-- To get row-major default layout with `from_array`, pass explicit layout:
+- To get row-major default layout with `from_array`, use `permute_dims`:
   ```fortran
-  integer(c_int64_t), dimension(2) :: layout = [2, 1]  ! Row-major for 2D
-  call torch_tensor_from_array(tensor, array, layout, torch_kCPU)
+  call torch_tensor_from_array(tensor, array, torch_kCPU, permute_dims=[2, 1])  ! Row-major for 2D
   ```
 - When `requires_grad=.true.` is passed to `torch_model_forward`, the output tensor may become decoupled from the underlying Fortran array due to a shallow copy. Re-create the tensor with `torch_tensor_from_array` after training if you need to read back into the array.
 
@@ -315,6 +334,11 @@ use ftorch, only: &
     torch_kCPU, torch_kFloat32, torch_kFloat64
 ```
 
+Tensor interrogation is normally via type-bound methods (`tensor%rank()`, etc.);
+the standalone `torch_tensor_get_*` procedures remain exported if preferred.
+
+It is best practise to only import items that are being used within the module/subroutine/file.
+
 # Examples Reference
 
 The `examples/` directory contains numbered examples:
@@ -330,6 +354,7 @@ The `examples/` directory contains numbered examples:
 - `09_Autograd/` - Automatic differentiation
 - `10_Optimizers/` - Optimizer usage
 - `11_Training/` - Full training loop
+- `12_Permutation/` - Tensor dimension permutation (`permute_dims`)
 
 # Workflow
 
