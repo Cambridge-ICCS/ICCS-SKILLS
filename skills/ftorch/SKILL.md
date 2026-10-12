@@ -16,6 +16,10 @@ Use this skill when:
 - Building FTorch projects with CMake
 - Debugging FTorch tensor operations or model inference
 
+This skill targets **FTorch v2.x**. For v1 code (errors about `get_rank`,
+`layout`, `ftorch_int`, `assert_allclose`), see `MIGRATION-v1-to-v2.md` in this
+skill's directory.
+
 # Prerequisites
 
 - FTorch installed and available in your build system
