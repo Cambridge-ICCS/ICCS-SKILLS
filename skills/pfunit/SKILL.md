@@ -7,7 +7,7 @@ description: Use this skill when writing, building, or parameterizing Fortran un
 
 I help write unit tests for Fortran code using [pFUnit](https://github.com/Goddard-Fortran-Ecosystem/pFUnit), the xUnit-style Fortran testing framework from the Goddard Fortran Ecosystem. This skill covers writing `.pf` test files, assertions, fixtures, parameterized tests, and building them with CMake (`add_pfunit_ctest`) or Make (`PFUNIT.mk`).
 
-pFUnit documentation is sparse and often out of date — this skill captures the working patterns used in ICCS projects (e.g. FTorch).
+pFUnit's documentation is sparse; the patterns below follow ICCS projects such as FTorch.
 
 # When to use this skill
 
@@ -78,7 +78,7 @@ contains
 end module unittest_multiply
 ```
 
-> **Important:** with the default CMake registry, the module name must equal the file basename (e.g. file `unittest_multiply.pf` → `module unittest_multiply`). The registry generates `ADD_TEST_SUITE(unittest_multiply_suite)` from the filename.
+With the default CMake registry, the module name must equal the file basename (e.g. file `unittest_multiply.pf` → `module unittest_multiply`): the registry generates `ADD_TEST_SUITE(unittest_multiply_suite)` from the filename.
 
 ### Tests run via a generated driver
 
@@ -168,7 +168,7 @@ Available matchers include `is`, `equal_to`, `not`, `all_of`, `any_of`, `every`,
 
 # Parameterized tests
 
-Parameterizing a test requires four pieces of infrastructure in the test module. The pattern below is distilled from working ICCS usage; the complete runnable file is `examples/parameterized-test.pf`.
+Parameterizing a test requires four pieces of infrastructure in the test module. The full runnable file is `examples/parameterized-test.pf`.
 
 ### 1. Define a testParameter type
 
@@ -351,8 +351,6 @@ $(eval $(call make_pfunit_test,test_multiply))
 
 Add `USEMPI=YES` for MPI builds. Full working file: `examples/Makefile.example`.
 
-> **Note:** `funitproc` (the `.pf` preprocessor) is a Python script with a `#!/usr/bin/env python` shebang, so a `python` executable must be on the `PATH` even for pure-Fortran builds. The CMake path finds a Python interpreter at configure time, but the Make path will fail with `env: python: No such file or directory` on systems providing only `python3`.
-
 # MPI tests
 
 pFUnit supports parallel tests via `MpiTestCase` / `MpiTestParameter`. MPI support is detected automatically at pFUnit configure time when an MPI Fortran compiler is found (disable with `-DSKIP_MPI=YES`), producing the extra `libpfunit` library. Key differences from serial tests:
@@ -392,6 +390,8 @@ Full annotated example: `examples/mpi-test.pf`. Unless the code under test is MP
 - **~132-char line limit → ~35-char test names:** the generated `suite%addTest(...)` line for parameterized tests is long; over-long test subroutine names cause compile-time line truncation. Keep test names ≤ ~35 characters and don't prefix everything with `test_` needlessly (the suite name already provides context).
 
 - **Module name = file basename:** with the default registry, `foo_test.pf` must contain `module foo_test`. Mismatches produce "module not found"-style build errors in the driver.
+
+- **`funitproc` needs `python` on the PATH:** the `.pf` preprocessor is a Python script with a `#!/usr/bin/env python` shebang. CMake finds an interpreter at configure time, but Make builds fail with `env: python: No such file or directory` on systems that only ship `python3` — run under a venv or symlink `python` to `python3`.
 
 - **Braces vs brackets:** use `testParameters={getter_function()}` (braces) for a getter, `testParameters={[Param(...), Param(...)]}` (brackets) for an inline array. Mixing these up gives obscure preprocessor errors.
 
