@@ -1,12 +1,12 @@
 # Example CMakeLists.txt for pFUnit tests (serial).
 #
 # Configure and run:
-#   cmake -B build -DCMAKE_PREFIX_PATH=<PATH/TO/PFUNIT-x.y>
+#   cmake -B build -DCMAKE_PREFIX_PATH=<pfunit-install>
 #   cmake --build build
 #   cd build && ctest --output-on-failure
 #
-# <PATH/TO/PFUNIT-x.y> is the pFUnit install prefix, e.g.
-#   pFUnit/build/installed/PFUNIT-4.12/
+# <pfunit-install> is the pFUnit install prefix. Pointing at the parent
+# install dir is enough (e.g. .../installed finds .../installed/PFUNIT-4.12).
 
 cmake_minimum_required(VERSION 3.12...3.31)
 

@@ -63,8 +63,8 @@ contains
     !! setUp has run, so this%factor is 3.0 regardless of declaration value
     class(MultiplyFixtureCase), intent(inout) :: this
 
-    @assertEqual(3.0_wp, this%factor)
-    @assertEqual(6.0_wp, multiply_numbers(this%factor, 2.0_wp))
+    @assertEqual(3.0_wp, this%factor, message="setUp did not initialise factor")
+    @assertEqual(6.0_wp, multiply_numbers(this%factor, 2.0_wp), message="multiply against set-Up factor failed")
 
   end subroutine test_uses_factor
 

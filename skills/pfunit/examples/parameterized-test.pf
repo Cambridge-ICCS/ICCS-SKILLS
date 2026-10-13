@@ -93,7 +93,7 @@ contains
 
     product = multiply_numbers(num1, num2)
 
-    @assertEqual(expected, product, tolerance=1.e-5)
+    @assertEqual(expected, product, tolerance=1.e-5, message=trim(this%params%desc))
 
   end subroutine test_multiply_numbers
 

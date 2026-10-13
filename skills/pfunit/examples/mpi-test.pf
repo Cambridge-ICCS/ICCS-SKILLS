@@ -19,6 +19,9 @@
 !    * the test-case argument exposes this%context (an MpiContext) with
 !      methods: this%context%processRank(), this%context%getNumProcesses(),
 !      this%context%isRootProcess(), this%context%getMpiCommunicator(), ...
+!    * when testing MPI-parallel code, pass that communicator in —
+!      this%context%getMpiCommunicator() — rather than letting the code use
+!      MPI_COMM_WORLD, so pFUnit controls the ranks in play
 
 module unittest_mpi
 
@@ -81,33 +84,37 @@ end module unittest_mpi
 ! =======================================================================
 ! Parameterized MPI tests
 ! ----------------------------------------------------------------------
-! For parameterized MPI tests, extend MpiTestParameter and request the
-! process count inside the parameter constructor:
+! Extend MpiTestParameter with your own parameters. numProcessesRequested
+! is inherited as the first component, so a bare @testParameter gives a
+! default structure constructor taking npes first — MpiParams(npes, phi):
 !
-!   @testParameter(constructor=newMpiParams)
+!   @testParameter
 !   type, extends(MpiTestParameter) :: MpiParams
 !     real :: phi
 !   contains
 !     procedure :: toString
 !   end type MpiParams
 !
-!   function newMpiParams(npes, phi) result(testParameter)
-!     type(MpiParams) :: testParameter
-!     integer, intent(in) :: npes
-!     real, intent(in) :: phi
-!     testParameter%phi = phi
-!     call testParameter%setNumProcessesRequested(npes)
+!   @test(testParameters={[MpiParams(1,0.1), MpiParams(2,0.2)]})
+!   subroutine testA(this) ...
+!   ! or a getter: params = [(MpiParams(n, 1.0), n=1,8)]
+!
+! You only need constructor=newMpiParams when you want npes set by a
+! function rather than at the call site — e.g. selecting predefined
+! cases, where the generated suite calls MpiParams(caseIndex):
+!
+!   @testParameter(constructor=newMpiParams)
+!   ... same type ...
+!   function newMpiParams(i) result(p)  ! or (npes,phi) for explicit use
+!     type(MpiParams) :: p
+!     integer, intent(in) :: i
+!     ! set p%phi, then:
+!     call p%setNumProcessesRequested(npes_for_i)
 !   end function newMpiParams
 !
-! then attach as usual:
-!
-!   @test(npes=[1,3], testParameters={[newMpiParams(1,0.1)]})
-!   subroutine testA(this) ...
-!
-! or select predefined cases declared in the parameter constructors:
-!
-!   @test(cases=[1,2])
+!   @test(cases=[1,2])   ! maps each case index through newMpiParams
 !   subroutine testC(this) ...
 !
-! See pFUnit bin/tests/inputs/MpiParameterizedTestCaseC.pf for a complete
-! working reference.
+! (Verified: the bare-@testParameter structure-constructor form compiles
+!  and runs under MPI on pFUnit 4.x.) See pFUnit
+!  bin/tests/inputs/MpiParameterizedTestCaseC.pf for a full reference.

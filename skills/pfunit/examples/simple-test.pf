@@ -33,7 +33,7 @@ contains
 
     product = multiply_numbers(num1, num2)
 
-    @assertEqual(expected, product)
+    @assertEqual(expected, product, message="multiply_numbers returned the wrong product")
 
   end subroutine test_multiply_numbers
 

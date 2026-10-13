@@ -34,7 +34,7 @@ make tests      # optional: verify the installation itself
 make install
 ```
 
-This installs to `pFUnit/build/installed/PFUNIT-x.y/` (where `x.y` is the version, e.g. `4.12`). The install tree contains:
+This installs under a prefix (e.g. `pFUnit/build/installed/PFUNIT-x.y/`):
 
 ```
 PFUNIT-x.y/
@@ -44,6 +44,8 @@ PFUNIT-x.y/
 ├── include/*.mod            # compiled funit/fhamcrest module files
 └── lib/                     # libfunit (serial), libpfunit (MPI)
 ```
+
+CMake finds it given just the parent install dir (`.../installed`); Make needs the exact prefix (the directory holding `include/PFUNIT.mk`).
 
 Optional MPI support is enabled automatically at CMake configure time when an MPI Fortran compiler is found (explicitly disable with `-DSKIP_MPI=YES`); this produces the additional `libpfunit` library.
 
@@ -108,7 +110,7 @@ add_pfunit_ctest(test_multiply
 Configure, build, and run:
 
 ```bash
-cmake -B build -DCMAKE_PREFIX_PATH=<PATH/TO/PFUNIT-x.y>
+cmake -B build -DCMAKE_PREFIX_PATH=<pfunit-install>
 cmake --build build
 cd build && ctest --verbose
 # or run the test executable directly: ./build/test_multiply
@@ -141,9 +143,9 @@ Examples:
 @assertEqual("Hello World!", greeting, whitespace=IGNORE_DIFFERENCES)
 ```
 
-### Custom assertions (e.g. allclose)
+### Custom assertions (e.g. allclose with relative tolerance)
 
-pFUnit has no built-in `allclose` with relative tolerance for arrays. A common pattern (used in FTorch) is to write a project utility module with a `logical` function performing the check, then assert on its result:
+For arrays, `@assertEqual(expected, actual, tolerance=tol)` already does an elementwise comparison against a **scalar absolute** tolerance — that covers the common NumPy-`allclose(atol=...)` case. What pFUnit does *not* provide is a **relative**-tolerance (`rtol`) comparison across an array. A common pattern (used in FTorch) is a project utility module with a `logical` function performing the relative check, asserted on with `@assertTrue`:
 
 ```fortran
 use my_test_utils, only: allclose
@@ -172,7 +174,7 @@ Parameterizing a test requires four pieces of infrastructure in the test module.
 
 ### 1. Define a testParameter type
 
-Extend `AbstractTestParameter`, add your parameter variables, and bind a `toString` function (required by the abstract parent) that renders the parameter set for output:
+Extend `AbstractTestParameter`, add your parameter variables, and bind a `toString` function (required by the abstract parent) that renders the parameter set for output. A `desc` string field is a convenient way to carry a human-readable label for each parameter set, returned by `toString` and reused as the assertion `message`:
 
 ```fortran
 @testParameter
@@ -219,7 +221,7 @@ function get_multiply_parameters() result(params)
 end function get_multiply_parameters
 ```
 
-Inline parameter lists are also allowed: `@test(testParameters={[MultiplyTestParameters(2.0, 2.0, 4.0, "case")]})`.
+Inline parameter lists are also allowed: `@test(testParameters={[MultiplyTestParameters(2.0, 2.0, 4.0, "case")]})`. To apply one parameter set to every `@test` in the module, put `testParameters` on the `@testCase` instead (`@testCase(testParameters={get_multiply_parameters()}, constructor=...)`) — each `@test` then runs once per parameter entry.
 
 ### 4. Annotate the test and take the test case as an argument
 
@@ -311,7 +313,7 @@ add_pfunit_ctest(test_something
 Pass the install location at configure time:
 
 ```bash
-cmake -B build -DCMAKE_PREFIX_PATH=<PATH/TO/PFUNIT-x.y>
+cmake -B build -DCMAKE_PREFIX_PATH=<pfunit-install>
 cmake --build build
 cd build && ctest --output-on-failure
 ```
@@ -337,7 +339,7 @@ Generated `.F90` files land in the current binary dir; test executables are stan
 For non-CMake projects, include `PFUNIT.mk` from the install and use the `make_pfunit_test` macro:
 
 ```make
-include $(PFUNIT)/include/PFUNIT.mk   # PFUNIT = path to PFUNIT-x.y install
+include $(PFUNIT)/include/PFUNIT.mk   # PFUNIT = install prefix (exact; not a parent dir)
 FFLAGS += $(PFUNIT_EXTRA_FFLAGS)
 
 test_multiply_TESTS := unittest_multiply.pf
@@ -358,13 +360,14 @@ pFUnit supports parallel tests via `MpiTestCase` / `MpiTestParameter`. MPI suppo
 - `use pFUnit` (not `use pfunit_mod` — that is the v3-era name kept in pFUnit's own self-tests under `bin/tests/`; the module was renamed and `pfunit_mod` fails to compile on pFUnit 4.x). `pFUnit` re-exports everything from `FUnit` plus the MPI types.
 - The test case type extends `MpiTestCase`; parameters extend `MpiTestParameter`
 - Process counts are given with `npes=[...]` on `@testCase`, or per-test with `@test(npes=[1,2], ...)` / `@mpitest(npes=[1,3,5])`; `cases=[...]` selects predefined MPI cases
-- MPI parameters call `setNumProcessesRequested(npes)` in their constructor
+- MPI parameters: a bare `@testParameter` on the extended `MpiTestParameter` gives a default structure constructor whose first argument is the inherited `numProcessesRequested`, so entries can be written `MpiParams(npes, phi, ...)` directly (no explicit constructor needed). Use `constructor=...` only when you want `numProcessesRequested` set inside a function — e.g. for `cases=[...]`
 - In CMake, pass `MAX_PES <n>` to `add_pfunit_ctest` so CTest runs under `mpiexec`; internally the MPI path links `libpfunit` instead of `libfunit`
 - Inside a test, the MPI context is available as `this%context` (an `MpiContext`) with accessors `processRank()`, `getNumProcesses()`, `isRootProcess()`, `getMpiCommunicator()`
+- When testing MPI-parallel source code, pass the communicator in rather than letting the code use `MPI_COMM_WORLD`, so pFUnit controls the ranks in play: design procedures to take a communicator argument and call them with `this%context%getMpiCommunicator()` (the communicator pFUnit sized for that test)
 
 Running the MPI executable directly with fewer ranks than requested does not crash — pFUnit reports "Insufficient processes to run this test" as a failure for the affected cases. Run it under the requested rank count (`mpiexec -np <n> ./test_mpi`, or let CTest's `MAX_PES` handle it).
 
-Full annotated example: `examples/mpi-test.pf`. Unless the code under test is MPI-parallel, prefer serial tests — most ICCS projects (e.g. FTorch) use only the serial path.
+Full annotated example: `examples/mpi-test.pf` (and `examples/mpi-comm-test.pf` for driving MPI-parallel source that takes a communicator). Unless the code under test is MPI-parallel, prefer serial tests — most ICCS projects (e.g. FTorch) use only the serial path.
 
 # Gotchas
 
@@ -401,7 +404,7 @@ Full annotated example: `examples/mpi-test.pf`. Unless the code under test is MP
 
 # Workflow
 
-1. **Check the install:** locate the pFUnit install (`PFUNIT-x.y/` with `cmake/PFUNITConfig.cmake`). Projects that vendor pFUnit (e.g. FTorch) often have one under `build*/**/installed/PFUNIT-*/`; otherwise ask the user or check their environment.
+1. **Check the install:** locate the pFUnit install prefix (the directory containing `cmake/PFUNITConfig.cmake`) — often under a vendored build. CMake accepts that prefix or its parent; Make needs the prefix itself.
 2. **Identify the interface under test:** pick the public procedures of the module; keep the code in its own library target (`add_library`) so tests can link it.
 3. **Write the `.pf` file:** start with a single `@test` and `@assertEqual`; name file and module identically.
 4. **Set up build system:** `find_package(PFUNIT REQUIRED)` + `add_pfunit_ctest` (CMake) or `PFUNIT.mk` (Make).
@@ -418,6 +421,8 @@ Full annotated example: `examples/mpi-test.pf`. Unless the code under test is MP
 | `examples/parameterized-test.pf` | Complete parameterized test (types, constructor, getter, assertions) |
 | `examples/fixtures-test.pf` | `@before`/`@after` and type-bound `setUp`/`tearDown` |
 | `examples/mpi-test.pf` | MPI test case and parameters (`MpiTestCase`, `npes`) |
+| `examples/mpi-multiply-mod.f90` | MPI code under test that takes a communicator argument |
+| `examples/mpi-comm-test.pf` | Driving a comm-taking MPI routine from a test (`getMpiCommunicator()`) |
 | `examples/CMakeLists.txt.example` | Full CMake build for the examples |
 | `examples/Makefile.example` | Full Make build (PFUNIT.mk) for the examples |
 

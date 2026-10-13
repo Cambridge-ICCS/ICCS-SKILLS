@@ -1,0 +1,55 @@
+!| mpi-comm-test.pf
+!  Testing MPI-parallel code whose routines take the communicator as an
+!  argument (see mpi-multiply-mod.f90). The test hands the routine the
+!  communicator pFUnit created for THIS test — this%context%getMpiCommunicator()
+!  — rather than MPI_COMM_WORLD, so each @test(npes=[...]) drives the code on
+!  exactly the ranks pFUnit allocated. Using MPI_COMM_WORLD instead would try
+!  to talk to every rank in the job (not just this test's), and the collective
+!  would hang or error.
+!
+!  Build with an MPI-enabled pFUnit:
+!    add_pfunit_ctest(test_mpi_comm
+!      TEST_SOURCES mpi-comm-test.pf
+!      OTHER_SOURCES mpi-multiply-mod.f90
+!      MAX_PES 2)
+
+module mpi_comm_test
+
+  use, intrinsic :: iso_fortran_env, only: wp => real64
+  use pFUnit
+  use mpi_multiply_mod, only: multiply_global
+
+  implicit none
+
+  public
+
+  !> Test case for MPI tests driving a comm-taking routine
+  @testCase(npes=[1,2])
+  type, extends(MpiTestCase) :: MpiCommCase
+  end type MpiCommCase
+
+contains
+
+  !> Runs on 1 and on 2 processes; each invocation uses pFUnit's own
+  !  communicator for that run
+  @test(npes=[1,2])
+  subroutine test_multiply_global(this)
+    class(MpiCommCase), intent(inout) :: this
+
+    integer :: comm, npes
+    real(wp) :: product
+
+    ! Hand the code pFUnit's communicator for this test (npes ranks), not
+    ! MPI_COMM_WORLD:
+    comm = this%context%getMpiCommunicator()
+    npes = this%context%getNumProcesses()
+
+    ! Every rank does 2*2 then Allreduce sums over npes ranks:
+    product = multiply_global(2.0_wp, 2.0_wp, comm)
+
+    @assertEqual(4.0_wp * npes, product, tolerance=1.e-5_wp, &
+                 message="global multiply did not sum over the test communicator")
+
+  end subroutine test_multiply_global
+
+end module mpi_comm_test
