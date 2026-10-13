@@ -45,13 +45,13 @@ contains
     type(MultiplyTestParameters), allocatable :: params(:)
 
     params = [ &
-      MultiplyTestParameters(2.0, 2.0, 4.0, trim("+ * +")), &
-      MultiplyTestParameters(-2.0, 2.0, -4.0, trim("+ * -")), &
-      MultiplyTestParameters(2.0, -2.0, -4.0, trim("- * +")), &
-      MultiplyTestParameters(-2.0, -2.0, 4.0, trim("- * -")), &
-      MultiplyTestParameters(3.0, 2.0, 6.0, trim("2 integer")), &
-      MultiplyTestParameters(3.0, 2.5, 7.5, trim("1 real")), &
-      MultiplyTestParameters(3.3, 6.6, 21.78, trim("2 real")) &
+      MultiplyTestParameters(2.0, 2.0, 4.0, trim("two positives")), &
+      MultiplyTestParameters(-2.0, 2.0, -4.0, trim("negative * positive")), &
+      MultiplyTestParameters(2.0, -2.0, -4.0, trim("positive * negative")), &
+      MultiplyTestParameters(-2.0, -2.0, 4.0, trim("two negatives")), &
+      MultiplyTestParameters(3.0, 2.0, 6.0, trim("two integers")), &
+      MultiplyTestParameters(3.0, 2.5, 7.5, trim("integer * real")), &
+      MultiplyTestParameters(3.3, 6.6, 21.78, trim("two non-integer reals")) &
     ]
   end function get_multiply_parameters
 

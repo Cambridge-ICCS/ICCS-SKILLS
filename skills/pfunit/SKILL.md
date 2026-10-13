@@ -86,8 +86,8 @@ The build system generates a driver program (`<name>_driver.F90`) that assembles
 
 ### Serial vs MPI
 
-- Serial tests `use funit` and link `libfunit`; `@test` subroutines take no arguments (or a test-case argument).
-- MPI tests `use pFUnit`, extend `MpiTestCase`/`MpiTestParameter`, require an MPI-enabled pFUnit build, and link `libpfunit` (which includes `libfunit`). See the MPI section below.
+- Serial tests `use funit` and link `libfunit`. Unparameterized `@test` subroutines take no arguments; parameterized ones take a test-case argument (see Parameterized tests below).
+- MPI tests `use pFUnit`, define test cases by extending `MpiTestCase` (parameters via `MpiTestParameter`), require an MPI-enabled pFUnit build, and link `libpfunit` (which includes `libfunit`). Every MPI `@test` subroutine takes the `MpiTestCase` argument. See the MPI section below.
 
 # Quick start: a simple test and build
 
@@ -213,9 +213,9 @@ A function returning an **allocatable array** of the parameter type — one entr
 function get_multiply_parameters() result(params)
   type(MultiplyTestParameters), allocatable :: params(:)
   params = [ &
-    MultiplyTestParameters( 2.0,  2.0,  4.0, "+ * +"), &
-    MultiplyTestParameters(-2.0,  2.0, -4.0, "- * +"), &
-    MultiplyTestParameters( 3.3,  6.6, 21.78, "2 real") ]
+    MultiplyTestParameters( 2.0,  2.0,  4.0, "two positives"), &
+    MultiplyTestParameters(-2.0,  2.0, -4.0, "negative * positive"), &
+    MultiplyTestParameters( 3.3,  6.6, 21.78, "two non-integer reals") ]
 end function get_multiply_parameters
 ```
 
@@ -322,7 +322,7 @@ cd build && ctest --output-on-failure
 |----------|---------|
 | `TEST_SOURCES` | `.pf` files to preprocess and compile (module name must match basename) |
 | `LINK_LIBRARIES` | Libraries to link (your code under test as a library target) |
-| `OTHER_SOURCES` | Extra un-preprocessed sources (`.F90`, `.c`) compiled into the test |
+| `OTHER_SOURCES` | Extra sources (e.g. `.F90`, `.c`) compiled directly into the test without running through `funitproc` |
 | `REGISTRY` | Custom `testSuites.inc` (rarely needed; a default is auto-generated) |
 | `EXTRA_USE` | Extra module to `use` in the generated driver |
 | `EXTRA_INITIALIZE` / `EXTRA_FINALIZE` | Procedures called before/after the whole run |
@@ -404,7 +404,7 @@ Full annotated example: `examples/mpi-test.pf`. Unless the code under test is MP
 1. **Check the install:** locate the pFUnit install (`PFUNIT-x.y/` with `cmake/PFUNITConfig.cmake`). Projects that vendor pFUnit (e.g. FTorch) often have one under `build*/**/installed/PFUNIT-*/`; otherwise ask the user or check their environment.
 2. **Identify the interface under test:** pick the public procedures of the module; keep the code in its own library target (`add_library`) so tests can link it.
 3. **Write the `.pf` file:** start with a single `@test` and `@assertEqual`; name file and module identically.
-4. **Wire the build:** `find_package(PFUNIT REQUIRED)` + `add_pfunit_ctest` (CMake) or `PFUNIT.mk` (Make).
+4. **Set up build system:** `find_package(PFUNIT REQUIRED)` + `add_pfunit_ctest` (CMake) or `PFUNIT.mk` (Make).
 5. **Build and run:** `cmake -B build -DCMAKE_PREFIX_PATH=... && cmake --build build && (cd build && ctest --output-on-failure)`.
 6. **Parameterize** once basic tests pass: add the parameter type, test case, constructor, getter, and convert tests using the pattern above.
 7. **Iterate:** read CTest output — failures print file, line, and the `toString` of the offending parameter set.
