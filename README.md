@@ -14,6 +14,7 @@ Skills are plain-text instructions designed for AI coding assistants (OpenCode, 
 | [ford](skills/ford/SKILL.md) | Use this skill for adding FORD documentation comments to Fortran source code. |
 | [fortitude](skills/fortitude/SKILL.md) | Use this skill when linting Fortran source code with the Fortitude linter, including running checks, fixing warnings, and configuring rule selection. |
 | [ftorch](skills/ftorch/SKILL.md) | Use this skill when working with the FTorch library to couple PyTorch ML models to Fortran code. |
+| [pfunit](skills/pfunit/SKILL.md) | Use this skill when writing, building, or parameterizing Fortran unit tests with the pFUnit framework, including .pf test files, assertions, fixtures, parameterized tests, and CMake or Make integration. |
 
 ## How to Use
 

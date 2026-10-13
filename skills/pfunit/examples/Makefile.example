@@ -1,0 +1,83 @@
+# Example Makefile for pFUnit tests (serial), for projects not using CMake.
+#
+# Set PFUNIT to the install prefix and build:
+#   PFUNIT=<PATH/TO/PFUNIT-x.y> make
+# or:
+#   make PFUNIT=<PATH/TO/PFUNIT-x.y>
+#
+# This builds:
+#   test_multiply        - the simple test
+#   test_multiply_param  - the parameterized test
+# Run the executables directly; they report results to stdout.
+
+FC = gfortran
+FFLAGS = -Wall -Wextra -O2
+
+# Specify pFUnit location and include its Make functions.
+# PFUNIT.mk sets PFUNIT_EXTRA_FFLAGS (include paths) and the libraries.
+include $(PFUNIT)/include/PFUNIT.mk
+FFLAGS += $(PFUNIT_EXTRA_FFLAGS)
+
+# Library with the code under test, linked into the test executables
+LIB_OBJS := multiply_mod.o
+
+all: test_multiply test_multiply_param
+
+# ==========================================
+# Simple test
+# ==========================================
+TARGET_TEST = test_multiply
+
+# Extra pFUnit machinery required to parse .pf files and wire compilation:
+$(TARGET_TEST)_TESTS := unittest_multiply.pf
+$(TARGET_TEST)_REGISTRY :=
+$(TARGET_TEST)_OTHER_SOURCES :=
+$(TARGET_TEST)_OTHER_LIBRARIES := -L. -lmultiply
+$(TARGET_TEST)_OTHER_INCS :=
+
+$(eval $(call make_pfunit_test,$(TARGET_TEST)))
+
+# ==========================================
+# Parameterized test
+# ==========================================
+TARGET_TEST_PARAM = test_multiply_param
+
+$(TARGET_TEST_PARAM)_TESTS := unittest_multiply_param.pf
+$(TARGET_TEST_PARAM)_REGISTRY :=
+$(TARGET_TEST_PARAM)_OTHER_SOURCES :=
+$(TARGET_TEST_PARAM)_OTHER_LIBRARIES := -L. -lmultiply
+$(TARGET_TEST_PARAM)_OTHER_INCS :=
+
+$(eval $(call make_pfunit_test,$(TARGET_TEST_PARAM)))
+
+# ==========================================
+# Support rules
+# ==========================================
+$(TARGET_TEST): libmultiply.a
+$(TARGET_TEST_PARAM): libmultiply.a
+
+# The preprocessed .F90 test files `use` the module under test, so its .mod
+# must exist before they compile (PFUNIT.mk adds no such dependency itself):
+unittest_multiply.o: multiply_mod.o
+unittest_multiply_param.o: multiply_mod.o
+
+libmultiply.a: $(LIB_OBJS)
+	$(AR) -r $@ $?
+
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $<
+
+%.o: %.F90
+	$(FC) $(FFLAGS) -c $<
+
+clean:
+	$(RM) *.o *.mod *.a *.inc
+	$(RM) unittest_multiply.F90 unittest_multiply_param.F90
+
+clean-all: clean
+	$(RM) $(TARGET_TEST) $(TARGET_TEST_PARAM)
+
+# For MPI builds (pFUnit installed with MPI support, i.e. libpfunit), also
+# set:
+#   USEMPI=YES
+# before including PFUNIT.mk, which switches the link to -lpfunit.

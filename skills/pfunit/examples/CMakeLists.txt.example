@@ -1,0 +1,81 @@
+# Example CMakeLists.txt for pFUnit tests (serial).
+#
+# Configure and run:
+#   cmake -B build -DCMAKE_PREFIX_PATH=<PATH/TO/PFUNIT-x.y>
+#   cmake --build build
+#   cd build && ctest --output-on-failure
+#
+# <PATH/TO/PFUNIT-x.y> is the pFUnit install prefix, e.g.
+#   pFUnit/build/installed/PFUNIT-4.12/
+
+cmake_minimum_required(VERSION 3.12...3.31)
+
+project(
+  PFUnitExamples
+  VERSION 1.0.0
+  LANGUAGES Fortran
+)
+
+# ==========================================
+# pFUnit tests
+
+find_package(PFUNIT REQUIRED)
+enable_testing()
+
+# Library containing the code under test.
+# Tests link against this rather than compiling sources directly, keeping the
+# build close to how the code is used for real.
+add_library(multlib multiply_mod.f90)
+
+# Simple (single-assertion) test.
+# NOTE: the file basename must match the module name inside the file,
+# e.g. simple-test.pf must contain `module simple_test` — or, as here where the
+# file is renamed at copy time, unittest_multiply.pf / module unittest_multiply.
+add_pfunit_ctest(test_multiply
+  TEST_SOURCES unittest_multiply.pf
+  LINK_LIBRARIES multlib
+)
+
+# Parameterized test
+add_pfunit_ctest(test_multiply_param
+  TEST_SOURCES unittest_multiply_param.pf
+  LINK_LIBRARIES multlib
+)
+
+# Fixtures test (@before/@after + setUp/tearDown)
+add_pfunit_ctest(test_fixtures
+  TEST_SOURCES unittest_fixtures.pf
+  LINK_LIBRARIES multlib
+)
+
+# ------------------------------------------
+# Options supported by add_pfunit_ctest:
+#
+#   TEST_SOURCES      .pf files (preprocessed to .F90 automatically)
+#   LINK_LIBRARIES    targets/libraries to link against
+#   OTHER_SOURCES     extra plain sources compiled into the test (e.g. C helpers)
+#   REGISTRY          custom testSuites.inc (default is auto-generated)
+#   EXTRA_USE         extra module to `use` in the generated driver
+#   EXTRA_INITIALIZE  procedure called once before all suites run
+#   EXTRA_FINALIZE    procedure called once after all suites run
+#   MAX_PES           run under mpiexec with this many processes (MPI builds)
+#   LABELS            CTest labels, select with `ctest -L <label>`
+#   WORKING_DIRECTORY where the test executable executes
+#
+# Example with more options:
+# add_pfunit_ctest(test_advanced
+#   TEST_SOURCES unittest_advanced.pf
+#   OTHER_SOURCES helper.c
+#   LINK_LIBRARIES multlib
+#   LABELS "slow;integration"
+#   EXTRA_INITIALIZE global_setup
+# )
+
+# ------------------------------------------
+# MPI build (requires pFUnit built with MPI support, i.e. libpfunit present):
+#
+# add_pfunit_ctest(test_mpi
+#   TEST_SOURCES unittest_mpi.pf
+#   LINK_LIBRARIES multlib
+#   MAX_PES 4
+# )

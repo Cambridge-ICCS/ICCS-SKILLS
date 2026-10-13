@@ -1,0 +1,113 @@
+!| unittest_mpi.pf
+!  MPI-enabled pFUnit test.
+!
+!  Requires:
+!    * pFUnit built with MPI support (detected automatically at configure
+!      time when an MPI compiler is found; disable with -DSKIP_MPI=YES),
+!      producing the extra libpfunit library alongside libfunit.
+!    * CMake: add_pfunit_ctest(test_mpi TEST_SOURCES unittest_mpi.pf
+!                              LINK_LIBRARIES multlib MAX_PES 4)
+!      (MAX_PES makes CTest run the test under mpiexec.)
+!    * Make: set USEMPI=YES before including PFUNIT.mk.
+!
+!  Key differences from serial tests:
+!    * `use pFUnit` instead of `use funit` (note: pFUnit's own v3-era
+!      self-tests under bin/tests/ say `use pfunit_mod` — that module was
+!      renamed and no longer exists; it fails to compile on pFUnit 4.x)
+!    * test case extends MpiTestCase, parameters extend MpiTestParameter
+!    * process counts via npes=[...] on @testCase, or per-test on @test
+!    * the test-case argument exposes this%context (an MpiContext) with
+!      methods: this%context%processRank(), this%context%getNumProcesses(),
+!      this%context%isRootProcess(), this%context%getMpiCommunicator(), ...
+
+module unittest_mpi
+
+  use pFUnit
+
+  implicit none
+
+  public
+
+  !> Test case for MPI tests. npes on the type sets a default; it can be
+  !  overridden per-test with @test(npes=[...]).
+  @testCase(npes=[1,2])
+  type, extends(MpiTestCase) :: MpiMultiplyCase
+    integer :: rank_valid = 0
+  contains
+    procedure :: setUp
+    procedure :: tearDown
+  end type MpiMultiplyCase
+
+contains
+
+  subroutine setUp(this)
+    class(MpiMultiplyCase), intent(inout) :: this
+    this%rank_valid = 1
+  end subroutine setUp
+
+  subroutine tearDown(this)
+    class(MpiMultiplyCase), intent(inout) :: this
+    this%rank_valid = 0
+  end subroutine tearDown
+
+  !> Runs on 1 and on 2 processes (two separate invocations)
+  @test(npes=[1,2])
+  subroutine test_rank_in_range(this)
+    class(MpiMultiplyCase), intent(inout) :: this
+
+    integer :: rank, npes
+
+    rank = this%context%processRank()
+    npes = this%context%getNumProcesses()
+
+    @assertTrue(rank >= 0)
+    @assertTrue(rank < npes)
+    @assertEqual(1, this%rank_valid)
+
+  end subroutine test_rank_in_range
+
+  !> A test without npes= uses the type-level default ([1,2] above)
+  @test
+  subroutine test_default_npes(this)
+    class(MpiMultiplyCase), intent(inout) :: this
+
+    @assertTrue(this%context%getNumProcesses() >= 1)
+
+  end subroutine test_default_npes
+
+end module unittest_mpi
+
+
+! =======================================================================
+! Parameterized MPI tests
+! ----------------------------------------------------------------------
+! For parameterized MPI tests, extend MpiTestParameter and request the
+! process count inside the parameter constructor:
+!
+!   @testParameter(constructor=newMpiParams)
+!   type, extends(MpiTestParameter) :: MpiParams
+!     real :: phi
+!   contains
+!     procedure :: toString
+!   end type MpiParams
+!
+!   function newMpiParams(npes, phi) result(testParameter)
+!     type(MpiParams) :: testParameter
+!     integer, intent(in) :: npes
+!     real, intent(in) :: phi
+!     testParameter%phi = phi
+!     call testParameter%setNumProcessesRequested(npes)
+!   end function newMpiParams
+!
+! then attach as usual:
+!
+!   @test(npes=[1,3], testParameters={[newMpiParams(1,0.1)]})
+!   subroutine testA(this) ...
+!
+! or select predefined cases declared in the parameter constructors:
+!
+!   @test(cases=[1,2])
+!   subroutine testC(this) ...
+!
+! See pFUnit bin/tests/inputs/MpiParameterizedTestCaseC.pf for a complete
+! working reference.
