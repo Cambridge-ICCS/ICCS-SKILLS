@@ -10,10 +10,11 @@ Skills are plain-text instructions designed for AI coding assistants (OpenCode, 
 
 | Skill | Description |
 |-------|-------------|
+| [enzyme-fortran](skills/enzyme-fortran/SKILL.md) | Use this skill when working with the Enzyme automatic differentiation framework to differentiate Fortran code. |
 | [ford](skills/ford/SKILL.md) | Use this skill for adding FORD documentation comments to Fortran source code. |
-| [ftorch](SKILLS/ftorch/SKILL.md) | Use this skill when working with the FTorch library to couple PyTorch ML models to Fortran code. |
+| [fortitude](skills/fortitude/SKILL.md) | Use this skill when linting Fortran source code with the Fortitude linter, including running checks, fixing warnings, and configuring rule selection. |
+| [ftorch](skills/ftorch/SKILL.md) | Use this skill when working with the FTorch library to couple PyTorch ML models to Fortran code. |
 | [green-ci](skills/green-ci/SKILL.md) | Use this skill when creating or modifying GitHub Actions workflows and when making git commits related to such workflows. |
-| [mesc](skills/mesc/SKILL.md) | Use this skill when working with the MESC soil carbon cycle model |
 
 ## How to Use
 
