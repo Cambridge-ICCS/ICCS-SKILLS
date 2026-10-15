@@ -161,6 +161,13 @@ Use these when committing changes that you don't need CI/CD to run for, or for c
 2. Follow the prompts to match the requirements of the project
 3. Fill in any `TODO` notes left in the workflow definitions by `green-ci`
 
+# Other notes
+
+- Invoking `copier` will create directories `.github/workflows/` (if they do not already exist) and insert several GitHub Actions workflows.
+- It will also create a `.copier_answers.yml` file for convenience of seeing what prompts were provided.
+  - Note that `.gitignore` files are not created or modified so the `.copier_answers.yml` file will likely be picked up by git as untracked.
+  - The `.copier_answers.yml` file is in the same format as accepted by the `--answers-file` argument.
+
 ## See Also
 
 - [green-ci repository](https://github.com/Cambridge-ICCS/green-ci)
