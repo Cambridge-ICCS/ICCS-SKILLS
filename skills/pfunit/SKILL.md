@@ -355,19 +355,9 @@ Add `USEMPI=YES` for MPI builds. Full working file: `examples/Makefile.example`.
 
 # MPI tests
 
-pFUnit supports parallel tests via `MpiTestCase` / `MpiTestParameter`. MPI support is detected automatically at pFUnit configure time when an MPI Fortran compiler is found (disable with `-DSKIP_MPI=YES`), producing the extra `libpfunit` library. Key differences from serial tests:
+pFUnit supports parallel tests via `MpiTestCase` / `MpiTestParameter` (build with an MPI-enabled pFUnit, i.e. `libpfunit`). MPI tests `use pFUnit`, extend `MpiTestCase`, request process counts with `npes=[...]` on `@testCase`/`@test`, and run under `mpiexec` (or CTest's `MAX_PES`). When testing MPI-parallel source, pass the communicator pFUnit creates for the test — `this%context%getMpiCommunicator()` — rather than letting the code use `MPI_COMM_WORLD`.
 
-- `use pFUnit` (not `use pfunit_mod` — that is the v3-era name kept in pFUnit's own self-tests under `bin/tests/`; the module was renamed and `pfunit_mod` fails to compile on pFUnit 4.x). `pFUnit` re-exports everything from `FUnit` plus the MPI types.
-- The test case type extends `MpiTestCase`; parameters extend `MpiTestParameter`
-- Process counts are given with `npes=[...]` on `@testCase`, or per-test with `@test(npes=[1,2], ...)` / `@mpitest(npes=[1,3,5])`; `cases=[...]` selects predefined MPI cases
-- MPI parameters: a bare `@testParameter` on the extended `MpiTestParameter` gives a default structure constructor whose first argument is the inherited `numProcessesRequested`, so entries can be written `MpiParams(npes, phi, ...)` directly (no explicit constructor needed). Use `constructor=...` only when you want `numProcessesRequested` set inside a function — e.g. for `cases=[...]`
-- In CMake, pass `MAX_PES <n>` to `add_pfunit_ctest` so CTest runs under `mpiexec`; internally the MPI path links `libpfunit` instead of `libfunit`
-- Inside a test, the MPI context is available as `this%context` (an `MpiContext`) with accessors `processRank()`, `getNumProcesses()`, `isRootProcess()`, `getMpiCommunicator()`
-- When testing MPI-parallel source code, pass the communicator in rather than letting the code use `MPI_COMM_WORLD`, so pFUnit controls the ranks in play: design procedures to take a communicator argument and call them with `this%context%getMpiCommunicator()` (the communicator pFUnit sized for that test)
-
-Running the MPI executable directly with fewer ranks than requested does not crash — pFUnit reports "Insufficient processes to run this test" as a failure for the affected cases. Run it under the requested rank count (`mpiexec -np <n> ./test_mpi`, or let CTest's `MAX_PES` handle it).
-
-Full annotated example: `examples/mpi-test.pf` (and `examples/mpi-comm-test.pf` for driving MPI-parallel source that takes a communicator). Unless the code under test is MPI-parallel, prefer serial tests — most ICCS projects (e.g. FTorch) use only the serial path.
+Unless the code under test is MPI-parallel, prefer serial tests — most ICCS projects (e.g. FTorch) use only the serial path. See [mpi.md](mpi.md) for the full MPI reference and examples (`examples/mpi-test.pf`, `examples/mpi-comm-test.pf`, `examples/mpi-multiply-mod.f90`).
 
 # Gotchas
 
@@ -416,6 +406,7 @@ Full annotated example: `examples/mpi-test.pf` (and `examples/mpi-comm-test.pf` 
 
 | File | Contents |
 |------|----------|
+| `mpi.md` | Full MPI reference (`MpiTestCase`/`MpiTestParameter`, communicator pattern, MPI build) |
 | `examples/multiply_mod.f90` | Tiny module under test used by the examples |
 | `examples/simple-test.pf` | Minimal single-assertion test |
 | `examples/parameterized-test.pf` | Complete parameterized test (types, constructor, getter, assertions) |
