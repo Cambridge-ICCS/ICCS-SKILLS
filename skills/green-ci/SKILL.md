@@ -16,7 +16,8 @@ Use this skill when:
 
 # Prerequisites
 
-- A Python virtual environment with `copier` installed
+- The Python package `copier` installed
+  - We recommend using a Python virtual environment for this
 
 # Quick Start
 
