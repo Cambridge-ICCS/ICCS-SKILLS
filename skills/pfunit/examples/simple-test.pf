@@ -1,0 +1,40 @@
+!| unittest_multiply.pf
+!  Minimal pFUnit test: one module, one @test, one assertion.
+!
+!  Build with:
+!    add_pfunit_ctest(test_multiply
+!      TEST_SOURCES unittest_multiply.pf
+!      LINK_LIBRARIES multlib)
+!  where multlib is a library target containing multiply_mod.f90.
+
+module unittest_multiply
+
+  use, intrinsic :: iso_fortran_env, only: wp => real64
+  use funit
+  use multiply_mod, only: multiply_numbers
+
+  implicit none
+
+  public
+
+contains
+
+  @test
+  subroutine test_multiply_numbers()
+    !! Test that multiplying two numbers returns the expected result
+
+    real(wp) :: num1, num2  !! numbers to multiply
+    real(wp) :: product     !! The product from multiplying
+    real(wp) :: expected    !! The expected result
+
+    num1 = 2.0_wp
+    num2 = 2.0_wp
+    expected = 4.0_wp
+
+    product = multiply_numbers(num1, num2)
+
+    @assertEqual(expected, product, message="multiply_numbers returned the wrong product")
+
+  end subroutine test_multiply_numbers
+
+end module unittest_multiply

@@ -1,0 +1,100 @@
+!| unittest_multiply_param.pf
+!  Complete parameterized pFUnit test.
+!
+!  The four pieces of infrastructure required:
+!    1. @testParameter type extending AbstractTestParameter (+ toString)
+!    2. @testCase(constructor=...) type extending ParameterizedTestCase
+!    3. A getter returning an allocatable array of parameter sets
+!    4. @test(testParameters={getter()}) with a test-case argument
+!
+!  Build with:
+!    add_pfunit_ctest(test_multiply_param
+!      TEST_SOURCES unittest_multiply_param.pf
+!      LINK_LIBRARIES multlib)
+
+module unittest_multiply_param
+
+  use, intrinsic :: iso_fortran_env, only: wp => real64
+  use funit
+  use multiply_mod, only: multiply_numbers
+
+  implicit none
+
+  public
+
+  !> Typedef for a test parameter for the multiply routine
+  @testParameter
+  type, extends(AbstractTestParameter) :: MultiplyTestParameters
+    real(wp) :: a, b, expected
+    character(:), allocatable :: desc
+   contains
+    procedure :: toString
+  end type MultiplyTestParameters
+
+  !> Typedef for a test case taking MultiplyTestParameters
+  @testCase(constructor=multiply_test_case_constructor)
+  type, extends(ParameterizedTestCase) :: MultiplyTestCase
+    type(MultiplyTestParameters) :: params
+  end type MultiplyTestCase
+
+contains
+
+  !> A fixture for varying the multiplication parameters
+  function get_multiply_parameters() result(params)
+
+    type(MultiplyTestParameters), allocatable :: params(:)
+
+    params = [ &
+      MultiplyTestParameters(2.0, 2.0, 4.0, trim("two positives")), &
+      MultiplyTestParameters(-2.0, 2.0, -4.0, trim("negative * positive")), &
+      MultiplyTestParameters(2.0, -2.0, -4.0, trim("positive * negative")), &
+      MultiplyTestParameters(-2.0, -2.0, 4.0, trim("two negatives")), &
+      MultiplyTestParameters(3.0, 2.0, 6.0, trim("two integers")), &
+      MultiplyTestParameters(3.0, 2.5, 7.5, trim("integer * real")), &
+      MultiplyTestParameters(3.3, 6.6, 21.78, trim("two non-integer reals")) &
+    ]
+  end function get_multiply_parameters
+
+  !> Fixture for printing parameter-set information in test output
+  function toString(this) result(string)
+
+    class(MultiplyTestParameters), intent(in) :: this
+    character(:), allocatable :: string
+
+    string = trim(this%desc)
+
+  end function toString
+
+  !> Constructor for the MultiplyTestCase type
+  function multiply_test_case_constructor(params)
+
+    type(MultiplyTestCase) :: multiply_test_case_constructor
+    type(MultiplyTestParameters), intent(in) :: params
+
+    multiply_test_case_constructor%params = params
+
+  end function multiply_test_case_constructor
+
+  ! ========================================================================
+
+  @test(testParameters={get_multiply_parameters()})
+  subroutine test_multiply_numbers(this)
+    !! Test that multiplying two numbers returns the expected result
+
+    class(MultiplyTestCase), intent(inout) :: this
+
+    real(wp) :: num1, num2  !! numbers to multiply
+    real(wp) :: product     !! The product from multiplying
+    real(wp) :: expected    !! The expected result
+
+    num1 = this%params%a
+    num2 = this%params%b
+    expected = this%params%expected
+
+    product = multiply_numbers(num1, num2)
+
+    @assertEqual(expected, product, tolerance=1.e-5, message=trim(this%params%desc))
+
+  end subroutine test_multiply_numbers
+
+end module unittest_multiply_param

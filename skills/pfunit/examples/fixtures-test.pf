@@ -1,0 +1,82 @@
+!| unittest_fixtures.pf
+!  Demonstrates the two fixture styles in pFUnit:
+!    * Module-level @before / @after subroutines (e.g. file setup)
+!    * Type-bound setUp / tearDown on an extended TestCase type
+!
+!  Note: both styles are shown here together for illustration. In a real
+!  suite a test module typically uses one consistent style.
+!
+!  Build with:
+!    add_pfunit_ctest(test_fixtures
+!      TEST_SOURCES unittest_fixtures.pf
+!      LINK_LIBRARIES multlib)
+
+module unittest_fixtures
+
+  use, intrinsic :: iso_fortran_env, only: wp => real64
+  use funit
+  use multiply_mod, only: multiply_numbers
+
+  implicit none
+
+  public
+
+  !> A test case holding per-test state, initialised in setUp
+  @testCase
+  type, extends(TestCase) :: MultiplyFixtureCase
+    real(wp) :: factor = -1.0_wp  ! sentinel; real value set in setUp
+  contains
+    procedure :: setUp
+    procedure :: tearDown
+  end type MultiplyFixtureCase
+
+contains
+
+  !> Runs before EVERY test in this module (module-level fixture)
+  @before
+  subroutine setup_log()
+    !! Placeholder for shared setup, e.g. opening a data file:
+    !! open(unit=10, file='testData.txt', form='formatted', status='replace')
+  end subroutine setup_log
+
+  !> Runs after EVERY test in this module (module-level fixture)
+  @after
+  subroutine teardown_log()
+    !! e.g. close(10, status='delete')
+  end subroutine teardown_log
+
+  !> Per-test-case setup: called before each test using MultiplyFixtureCase.
+  !  NOTE: no @ annotation — pFUnit finds these via the type-bound procedures.
+  subroutine setUp(this)
+    class(MultiplyFixtureCase), intent(inout) :: this
+    this%factor = 3.0_wp
+  end subroutine setUp
+
+  !> Per-test-case teardown: called after each test.
+  subroutine tearDown(this)
+    class(MultiplyFixtureCase), intent(inout) :: this
+    this%factor = -1.0_wp
+  end subroutine tearDown
+
+  @test
+  subroutine test_uses_factor(this)
+    !! setUp has run, so this%factor is 3.0 regardless of declaration value
+    class(MultiplyFixtureCase), intent(inout) :: this
+
+    @assertEqual(3.0_wp, this%factor, message="setUp did not initialise factor")
+    @assertEqual(6.0_wp, multiply_numbers(this%factor, 2.0_wp), message="multiply against set-Up factor failed")
+
+  end subroutine test_uses_factor
+
+  @test
+  subroutine test_factor_is_reset(this)
+    !! Also sees factor = 3.0: setUp runs afresh for every test,
+    !! so mutations made by test_uses_factor cannot leak in here
+    class(MultiplyFixtureCase), intent(inout) :: this
+
+    this%factor = this%factor * 10.0_wp
+    @assertEqual(30.0_wp, this%factor)
+
+  end subroutine test_factor_is_reset
+
+end module unittest_fixtures
