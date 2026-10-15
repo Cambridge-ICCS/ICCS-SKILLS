@@ -20,11 +20,47 @@ Use this skill when:
 
 # Quick Start
 
+## Approach for humans
+
 `green-ci` templates can be applied without cloning the respository. Simply run
 ```bash
 copier copy https://github.com/Cambridge-ICCS/green-ci.git /path/to/my-project
 ```
 and follow the prompts.
+
+## Approach for agents
+
+- Agents are not easily able to follow on-screen prompts in the same way that humans can.
+- Instead, it makes more sense to pass an 'answers file' with
+  ```sh
+  copier copy --answers-file /path/to/answers/file https://github.com/Cambridge-ICCS/green-ci.git /path/to/my-project
+  ```
+- The answers file is a YAML file that specifies the git commit hash, path to copy to, and the answers to the prompts.
+- The commit hash is specified by `_commit` and the path to copy to is specified by `_src_path`.
+- The prompts by `green-ci` are specified in the [options](#options) section below.
+
+### Example answers file
+
+Consider the following YAML file, which is used in the test suite CI for `green-ci` itself (at `.github/answers/test_suite.yml`):
+```yaml
+_commit: 44528ab
+_src_path: .
+build_docs_timeout: 15
+build_sys_file_paths:
+- 'copier.yml'
+carbon_aware: false
+deploy_docs: false
+docs_file_paths:
+- '**/*.md'
+joss_render_timeout: 5
+joss_upload_timeout: 5
+requirements_file_paths:
+- requirements-dev.txt
+source_file_paths:
+- '**/*.jinja'
+static_analysis_timeout: 5
+test_suite_timeout: 15
+```
 
 # Best practices
 
@@ -106,17 +142,17 @@ Use these when committing changes that you don't need CI/CD to run for, or for c
 
 # Options
 
-* `source_file_paths`: A YAML list of source file patterns including the file extension.
-* `docs_file_paths`: A YAML list of documentation file patterns including the file extension.
-* `build_sys_file_paths`: A YAML list of build system file patterns including the file extension.
-* `requirements_file_paths`: A YAML list of requirements file patterns including the file extension.
-* `build_docs_timeout`: The timeout in minutes for the documentation build job
-* `static_analysis_timeout`: The timeout in minutes for the static analysis job
-* `test_suite_timeout`: The timeout in minutes for the test suite job
-* `joss_render_timeout`: The timeout in minutes for the JOSS paper render job
-* `joss_upload_timeout`: The timeout in minutes for the JOSS paper upload job
-* `deploy_docs`: Whether to include a deployment job in the docs workflow.
-* `carbon_aware`: Whether to include carbon-aware energy measurement steps in the workflow
+* `source_file_paths`: A YAML list of source file patterns (strings) including the file extension.
+* `docs_file_paths`: A YAML list of documentation file patterns (strings) including the file extension.
+* `build_sys_file_paths`: A YAML list of build system file patterns (strings) including the file extension.
+* `requirements_file_paths`: A YAML list of requirements file patterns (strings) including the file extension.
+* `build_docs_timeout`: The timeout in minutes for the documentation build job (integer)
+* `static_analysis_timeout`: The timeout in minutes for the static analysis job (integer)
+* `test_suite_timeout`: The timeout in minutes for the test suite job (integer)
+* `joss_render_timeout`: The timeout in minutes for the JOSS paper render job (integer)
+* `joss_upload_timeout`: The timeout in minutes for the JOSS paper upload job (integer)
+* `deploy_docs`: Whether to include a deployment job in the docs workflow (boolean)
+* `carbon_aware`: Whether to include carbon-aware energy measurement steps in the workflow (boolean)
 
 # Workflow
 
