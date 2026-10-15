@@ -40,6 +40,11 @@ and follow the prompts.
 - The commit hash is specified by `_commit` and the path to copy to is specified by `_src_path`.
 - The prompts by `green-ci` are specified in the [options](#options) section below.
 
+## Overwriting existing workflows
+
+- Copier will crash if files already exist whose names match those that would be created.
+- To overwrite existing workflow files, use the `--force` option.
+
 ### Example answers file
 
 Consider the following YAML file, which is used in the test suite CI for `green-ci` itself (at `.github/answers/test_suite.yml`):
