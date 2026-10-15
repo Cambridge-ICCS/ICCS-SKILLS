@@ -423,3 +423,4 @@ Unless the code under test is MPI-parallel, prefer serial tests — most ICCS pr
 - [Parameterizing Fortran tests with pFUnit](https://jackatkinson.net/post/fortran_parameterizing_pfunit/) — walkthrough behind the parameterized pattern here
 - [pfunit-parameterization-demo](https://github.com/jatkinson1000/pfunit-parameterization-demo) — minimal runnable demo (simple vs parameterized side by side)
 - [FTorch test suite](https://github.com/Cambridge-ICCS/FTorch/tree/main/test/unit) — real-world ICCS usage, including custom `assert_allclose`-style utilities
+- [Unit Testing in Fortran workshop](https://carpentries-incubator.github.io/fortran-unit-testing/)
