@@ -23,7 +23,7 @@ Use this skill when:
 
 ## Approach for humans
 
-`green-ci` templates can be applied without cloning the respository. Simply run
+`green-ci` templates can be applied without cloning the repository. Simply run
 ```bash
 copier copy https://github.com/Cambridge-ICCS/green-ci.git /path/to/my-project
 ```
@@ -47,6 +47,28 @@ and follow the prompts.
   - Then use `git diff` to see what was changed and make edits to restore the intended functionality.
 - Note that the workflow names may not match those used by `green-ci`.
   - As such, you may need to merge the recommendations from the newly created workflows into the existing ones.
+
+### Generated workflows and their purposes
+
+| Generated file          | Purpose                                              |
+| ----------------------- | ---------------------------------------------------- |
+| `test_suite.yml`        | Build the project and run its test suite             |
+| `static_analysis.yml`   | Linting and other static analysis checks             |
+| `build_docs.yml`        | Build (and optionally deploy) documentation          |
+| `render_joss_paper.yml` | Render a JOSS paper draft and upload the PDF         |
+
+### Merging recommendations into existing workflows
+
+When a project already has workflows — perhaps named differently, or split by platform/compiler — treat the generated files as a statement of best practice rather than a drop-in replacement:
+
+1. Find the generated workflows (e.g., `git status --short .github/workflows/`) and read the `.copier_answers.yml` file at the repository root to see which options were provided.
+2. Map each generated workflow to the existing workflow(s) of the same type. A project may have several of a given type (e.g., one test suite per compiler); the recommendations apply to each of them, adapted to what that workflow builds.
+3. `diff` each generated workflow against its existing counterpart to isolate the deltas, then sort them into:
+   - **Recommendations to merge**: `paths` filters on *both* the `push` and `pull_request` triggers, `timeout-minutes`, `concurrency`, top-level `permissions: {}`, and the set of source-file path patterns.
+   - **Project-specific content to preserve**: build and test steps, matrix configurations, runner labels, and pinned action versions.
+4. Keep the project's own conventions where they are already equivalent (e.g., an alternative `concurrency` group expression or job name).
+5. Delete the generated files once their recommendations are merged, so that they do not shadow the project's workflows.
+6. Validate the merged workflows (e.g., parse the YAML; run `actionlint` or `zizmor` if available) and review the final `git diff`.
 
 ### Example answers file
 
@@ -124,18 +146,29 @@ Example configuring `paths`:
   name: MyPythonTestSuite
 
   on:
+    # Triggers the workflow on pushes to the "main" branch, i.e., PR merges
+    push:
+      branches: [ "main" ]
+
     # Triggers the workflow on pushes to open pull requests with code changes
     pull_request:
       paths:
         - '.github/workflows/test_suite_python.yml'
         - '**.py'
         - 'requirements.txt'
+
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
 ```
+
+- Note that `push` triggers can also be filtered by `paths` — not just `pull_request` — so that merges to the main branch only run the jobs whose inputs have changed.
+  - However, maintainers usually want all jobs to run on merges into `main`.
+- Retain `workflow_dispatch` (if present) so the workflow can still be run manually.
 
 ## Separation of concerns
 
-Where possible, separate workflows should be used for distinct tasks.
-For example, it is good practice to have separate workflows containing test suites, static analysis checks, and documentation builds, and to use appropriate path triggers.
+- Where possible, separate workflows should be used for distinct tasks.
+- For example, it is good practice to have separate workflows containing test suites, static analysis checks, and documentation builds, and to use appropriate path triggers.
 
 ## Skip CI
 
