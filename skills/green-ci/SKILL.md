@@ -32,21 +32,41 @@ and follow the prompts.
 ## Approach for agents
 
 - Agents are not easily able to follow on-screen prompts in the same way that humans can.
-- Instead, it makes more sense to pass an 'answers file' with
+- Instead, pass an 'answers file' together with the `--defaults` flag (which makes the run fully non-interactive — without it `copier` aborts with "Interactive session required"):
   ```sh
-  copier copy --answers-file /path/to/answers/file https://github.com/Cambridge-ICCS/green-ci.git /path/to/my-project
+  copier copy --defaults --answers-file <relative-path-to-answers-file> https://github.com/Cambridge-ICCS/green-ci.git /path/to/my-project
   ```
+- **Important:** the `--answers-file` path must be **relative to the destination directory**, not absolute. Passing an absolute path fails with a pydantic `ValidationError: "... is not a relative path"`. A reliable pattern is to place the answers file inside the destination directory (e.g. `<dest>/answers.yml`) and run `copier` with `workdir` set to the destination, passing just the basename.
 - The answers file is a YAML file that specifies the git commit hash, path to copy to, and the answers to the prompts.
 - The commit hash is specified by `_commit` and the path to copy to is specified by `_src_path`.
-- The prompts by `green-ci` are specified in the [options](#options) section below.
+  - To find the current upstream `_commit` value, inspect the template's `copier.yml` (e.g. via `curl https://raw.githubusercontent.com/Cambridge-ICCS/green-ci/main/copier.yml`) — the value used in this skill's example below may be stale.
+- The prompts by `green-ci` are specified in the [options](#options) section below. The defaults for each prompt are recorded in the template's `copier.yml` (also accessible at the URL above), which is useful as a reference when filling out an answers file.
 
 ## Working with existing workflows
 
 - Copier will crash if files already exist whose names match those that would be created.
-- To overwrite existing workflow files, use the `--force` option.
-  - Then use `git diff` to see what was changed and make edits to restore the intended functionality.
 - Note that the workflow names may not match those used by `green-ci`.
   - As such, you may need to merge the recommendations from the newly created workflows into the existing ones.
+
+### Recommended pattern for agents: generate into a scratch directory
+
+When the goal is to merge green-ci recommendations into existing workflows (rather than to adopt green-ci's filenames verbatim), the cleanest approach is:
+
+1. Generate the template workflows into a scratch directory outside the project (e.g. `/tmp/green-ci-output/`), so there are no filename conflicts to resolve:
+   ```sh
+   mkdir -p /tmp/green-ci-output
+   cp answers.yml /tmp/green-ci-output/answers.yml
+   cd /tmp/green-ci-output
+   copier copy --defaults --answers-file answers.yml https://github.com/Cambridge-ICCS/green-ci.git .
+   ```
+2. Read the generated `.github/workflows/*.yml` files directly to see green-ci's current recommended content for the configured options.
+3. Manually merge the relevant snippets into the project's existing workflows (see "Merging recommendations into existing workflows" below).
+
+This avoids the `--force` + `git diff` + restore-intended-functionality dance entirely, and avoids having to delete the generated files afterwards.
+
+### Alternative pattern: apply in-place with `--force`
+
+If you do need to apply green-ci directly into the project root, use the `--force` option to overwrite existing files. Then use `git diff` to see what was changed and make edits to restore the intended functionality.
 
 ### Generated workflows and their purposes
 
@@ -61,20 +81,35 @@ and follow the prompts.
 
 When a project already has workflows — perhaps named differently, or split by platform/compiler — treat the generated files as a statement of best practice rather than a drop-in replacement:
 
-1. Find the generated workflows (e.g., `git status --short .github/workflows/`) and read the `.copier_answers.yml` file at the repository root to see which options were provided.
+1. Find the generated workflows (e.g., `git status --short .github/workflows/` if generated in-place, or list the files in the scratch directory) and read the `.copier_answers.yml` file to see which options were provided.
 2. Map each generated workflow to the existing workflow(s) of the same type. A project may have several of a given type (e.g., one test suite per compiler); the recommendations apply to each of them, adapted to what that workflow builds.
 3. `diff` each generated workflow against its existing counterpart to isolate the deltas, then sort them into:
-   - **Recommendations to merge**: `paths` filters on *both* the `push` and `pull_request` triggers, `timeout-minutes`, `concurrency`, top-level `permissions: {}`, and the set of source-file path patterns.
+   - **Recommendations to merge**: see the checklist below.
    - **Project-specific content to preserve**: build and test steps, matrix configurations, runner labels, and pinned action versions.
 4. Keep the project's own conventions where they are already equivalent (e.g., an alternative `concurrency` group expression or job name).
-5. Delete the generated files once their recommendations are merged, so that they do not shadow the project's workflows.
+5. If you generated the templates in-place, delete the generated files once their recommendations are merged, so that they do not shadow the project's workflows. (If you generated into a scratch directory, this step is unnecessary.)
 6. Validate the merged workflows (e.g., parse the YAML; run `actionlint` or `zizmor` if available) and review the final `git diff`.
+
+### Checklist of green-ci recommendations to apply per workflow
+
+For each existing `.github/workflows/*.yml`, ensure the following are present (adapted to what the workflow actually builds/tests):
+
+- [ ] **Trigger `paths:` filters** on *both* `push` and `pull_request`. Include the workflow file itself (`.github/workflows/<name>.yml`) plus the source/build/doc patterns the workflow depends on. The `push` trigger should also constrain `branches: ["main"]`.
+- [ ] **`merge_group:`** trigger if the project uses merge queues.
+- [ ] **`workflow_dispatch:`** trigger so the workflow can be run manually from the Actions tab.
+- [ ] **`concurrency:`** block that cancels in-progress runs on the same ref. Either form is acceptable:
+  - The green-ci template form: `group: ${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`
+  - The softer project convention: `cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}` (only cancel for PR builds)
+- [ ] **Top-level `permissions: {}`** so the workflow token has no permissions by default. Jobs that need write access (e.g., `zizmor` needs `security-events: write`, `deploy-pages` needs `pages: write` and `id-token: write`) should declare them at the job level.
+- [ ] **`timeout-minutes`** on every job, sized as an over-estimate of typical runtime. As a rough guide: lint/format ~5 min, docs ~15 min, unit tests ~15–60 min, integration tests ~30–120 min.
+- [ ] **Deployment guards**: any deploy-to-Pages / publish job should have `if: ${{ github.ref == 'refs/heads/main' }}` so it doesn't fire on PRs or manual dispatches of other branches.
+- [ ] **Descriptive comments** on triggers and `permissions:` blocks, matching the style used by the green-ci templates (`# Triggers the workflow on pushes to the "main" branch...`, `# Write permissions are not needed for this workflow`, etc.). This makes the intent of each trigger clear to future editors.
 
 ### Example answers file
 
 Consider the following YAML file, which is used in the test suite CI for `green-ci` itself (at `.github/answers/test_suite.yml`):
 ```yaml
-_commit: 44528ab
+_commit: 44528ab  # NOTE: replace with the current upstream commit hash before use
 _src_path: .
 build_docs_timeout: 15
 build_sys_file_paths:
@@ -198,9 +233,17 @@ Use these when committing changes that you don't need CI/CD to run for, or for c
 
 # Workflow
 
-1. Apply `green-ci` to your project via `copier`
-2. Follow the prompts to match the requirements of the project
-3. Fill in any `TODO` notes left in the workflow definitions by `green-ci`
+## For a new project (no existing workflows)
+
+1. Apply `green-ci` to your project via `copier copy --defaults --answers-file <answers.yml> https://github.com/Cambridge-ICCS/green-ci.git .` (see "Approach for agents" above).
+2. Fill in any `TODO` notes left in the workflow definitions by `green-ci`.
+
+## For a project with existing workflows
+
+1. Generate the green-ci templates into a scratch directory (see "Working with existing workflows" above).
+2. For each existing workflow, work through the checklist in "Checklist of green-ci recommendations to apply per workflow" above.
+3. Validate the resulting YAML files (e.g. `python3 -c "import yaml, sys; [yaml.safe_load(open(f)) for f in sys.argv[1:]]" .github/workflows/*.yml`) and review the diff.
+4. Discard the scratch directory — there is nothing to clean up in the project itself.
 
 # Other notes
 
