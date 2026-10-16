@@ -40,10 +40,13 @@ and follow the prompts.
 - The commit hash is specified by `_commit` and the path to copy to is specified by `_src_path`.
 - The prompts by `green-ci` are specified in the [options](#options) section below.
 
-## Overwriting existing workflows
+## Working with existing workflows
 
 - Copier will crash if files already exist whose names match those that would be created.
 - To overwrite existing workflow files, use the `--force` option.
+  - Then use `git diff` to see what was changed and make edits to restore the intended functionality.
+- Note that the workflow names may not match those used by `green-ci`.
+  - As such, you may need to merge the recommendations from the newly created workflows into the existing ones.
 
 ### Example answers file
 
