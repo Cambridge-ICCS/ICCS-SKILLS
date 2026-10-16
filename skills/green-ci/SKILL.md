@@ -94,7 +94,7 @@ When a project already has workflows — perhaps named differently, or split by 
 
 For each existing `.github/workflows/*.yml`, ensure the following are present (adapted to what the workflow actually builds/tests):
 
-- [ ] **Trigger `paths:` filters** on *both* `push` and `pull_request`. Include the workflow file itself (`.github/workflows/<name>.yml`) plus the source/build/doc patterns the workflow depends on. The `push` trigger should also constrain `branches: ["main"]`.
+- [ ] **Trigger `paths:` filters on the `pull_request` trigger only**, covering the workflow file itself (`.github/workflows/<name>.yml`) plus the source/build/doc patterns the workflow depends on. Do *not* add `paths:` to the `push` trigger — developers usually want every workflow to run on merges to `main` regardless of which files changed, both as a final safety net and to keep the main-branch CI record complete. The `push` trigger should just constrain `branches: ["main"]`.
 - [ ] **`merge_group:`** trigger if the project uses merge queues.
 - [ ] **`workflow_dispatch:`** trigger so the workflow can be run manually from the Actions tab.
 - [ ] **`concurrency:`** block that cancels in-progress runs on the same ref. Either form is acceptable:
@@ -196,8 +196,7 @@ Example configuring `paths`:
     workflow_dispatch:
 ```
 
-- Note that `push` triggers can also be filtered by `paths` — not just `pull_request` — so that merges to the main branch only run the jobs whose inputs have changed.
-  - However, maintainers usually want all jobs to run on merges into `main`.
+- Apply `paths` filters to the `pull_request` trigger only. Do **not** add `paths` to the `push` trigger — although GitHub Actions supports it, maintainers usually want every workflow to run on merges into `main` regardless of which files changed. This gives a complete CI record on the main branch and acts as a final safety net for changes whose impact might have been underestimated by the `paths` patterns.
 - Retain `workflow_dispatch` (if present) so the workflow can still be run manually.
 
 ## Separation of concerns
